@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Portfolio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080d18;--card:#111a2b;--accent:#00c8ff;--text:#fff;--muted:#8995aa}
+body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif;min-height:100vh}
+header{width:100%;padding:25px 7%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1b2638}
+.logo{font-size:22px;font-weight:bold}.logo span{color:var(--accent)}
+.header-label{font-size:12px;color:var(--muted);letter-spacing:2px}
+.hero{padding:65px 7% 45px}.hero small{color:var(--accent);letter-spacing:3px;font-size:11px}
+.hero h1{font-size:clamp(30px,6vw,55px);margin-top:15px;line-height:1.15}
+.hero h1 span{color:var(--accent)}.hero p{color:var(--muted);margin-top:15px;max-width:500px;line-height:1.7}
+.navigation{padding:0 7%;display:flex;gap:12px;margin-bottom:35px}
+.nav-btn{border:1px solid #263449;background:transparent;color:#aab5c8;padding:11px 22px;border-radius:8px;cursor:pointer;font-size:13px;transition:.2s}
+.nav-btn.active,.nav-btn:hover{background:var(--accent);color:#00131c;border-color:var(--accent)}
+.container{padding:0 7% 70px}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.section-title h2{font-size:21px}.section-title span{font-size:12px;color:var(--muted)}
+.gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.item{position:relative;overflow:hidden;border-radius:12px;background:var(--card);border:1px solid #202d42;animation:appear .35s ease}
+.item img{width:100%;height:220px;display:block;object-fit:cover;cursor:pointer;transition:.3s}
+.item:hover img{transform:scale(1.05)}
+.item video{display:block;width:100%;height:220px;object-fit:contain;background:#000}
+.item-label{padding:12px;font-size:12px;color:#b9c5d8}
+.empty{display:none;padding:50px 15px;text-align:center;color:var(--muted);border:1px dashed #263449;border-radius:12px;font-size:13px}
+footer{border-top:1px solid #1b2638;padding:25px 7%;text-align:center;color:var(--muted);font-size:12px}
+.viewer{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.95);justify-content:center;align-items:center;padding:20px}
+.viewer img{max-width:100%;max-height:90vh;object-fit:contain}
+.close-viewer{position:absolute;top:20px;right:25px;color:white;font-size:35px;cursor:pointer}
+@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:1000px){.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){
+header{padding:20px 5%}.hero{padding:45px 5% 35px}
+.navigation{padding:0 5%}.container{padding:0 5% 50px}
+.gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.item img,.item video{height:155px}.section-title h2{font-size:18px}
+.item-label{padding:9px}
+}
+@media(max-width:350px){.gallery{grid-template-columns:1fr}.item img,.item video{height:200px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">MY<span>PORTFOLIO.</span></div>
+  <div class="header-label">CREATIVE WORKS</div>
+</header>
+
+<section class="hero">
+  <small>WELCOME TO MY PORTFOLIO</small>
+  <h1>Creative Ideas.<br><span>Visual Stories.</span></h1>
+  <p>Kumpulan karya fotografi dan video yang menampilkan kreativitas, proses, serta hasil karya saya.</p>
+</section>
+
+<nav class="navigation">
+  <button class="nav-btn active" onclick="showSection('photos',this)">Photography</button>
+  <button class="nav-btn" onclick="showSection('videos',this)">Videography</button>
+</nav>
+
+<main class="container">
+  <section id="photos">
+    <div class="section-title"><h2>Photo Gallery</h2><span id="photoCount">Memuat foto…</span></div>
+    <div class="gallery" id="photoGallery"></div>
+    <div class="empty" id="photoEmpty">Belum ada foto yang tersedia.</div>
+  </section>
+
+  <section id="videos" style="display:none">
+    <div class="section-title"><h2>Video Gallery</h2><span id="videoCount">Memuat video…</span></div>
+    <div class="gallery" id="videoGallery"></div>
+    <div class="empty" id="videoEmpty">Belum ada video yang tersedia.</div>
+  </section>
+</main>
+
+<footer>© 2026 MY PORTFOLIO — ALL RIGHTS RESERVED</footer>
+
+<div class="viewer" id="viewer" onclick="closeViewer()">
+  <span class="close-viewer">&times;</span>
+  <img id="viewerImage" src="" alt="Preview">
+</div>
+
+<script>
+const imageExtensions=['jpg','jpeg','png','webp','gif','avif','bmp'];
+const videoExtensions=['mp4','webm','ogg','mov','m4v'];
+
+function findFile(filename,extensions,callback){
+  let index=0;
+  function checkNext(){
+    if(index>=extensions.length){callback(null);return;}
+    const ext=extensions[index],path=filename+'.'+ext;
+    if(imageExtensions.includes(ext)){
+      const img=new Image();
+      img.onload=()=>callback(path);
+      img.onerror=()=>{index++;checkNext();};
+      img.src=path;
+    }else{
+      const video=document.createElement('video');
+      video.preload='metadata';
+      video.onloadedmetadata=()=>{
+        video.removeAttribute('src');video.load();callback(path);
+      };
+      video.onerror=()=>{
+        video.removeAttribute('src');video.load();index++;checkNext();
+      };
+      video.src=path;
+    }
+  }
+  checkNext();
+}
+
+function loadPhotos(){
+  const gallery=document.getElementById('photoGallery');
+  let loaded=0,checked=0;
+  for(let i=1;i<=20;i++){
+    findFile('foto'+i,imageExtensions,src=>{
+      if(src){
+        const item=document.createElement('div');item.className='item';
+        const img=document.createElement('img');
+        img.src=src;img.alt='Foto '+i;img.loading='lazy';
+        img.onclick=()=>openViewer(src);
+        const label=document.createElement('div');label.className='item-label';
+        label.textContent='Photography #'+i;
+        item.append(img,label);gallery.appendChild(item);loaded++;
+      }
+      checked++;
+      if(checked===20){
+        document.getElementById('photoCount').textContent=loaded+' Photos';
+        document.getElementById('photoEmpty').style.display=loaded===0?'block':'none';
+      }
+    });
+  }
+}
+
+function loadVideos(){
+  const gallery=document.getElementById('videoGallery');
+  let loaded=0,checked=0;
+  for(let i=1;i<=20;i++){
+    findFile('video'+i,videoExtensions,src=>{
+      if(src){
+        const item=document.createElement('div');item.className='item';
+        const video=document.createElement('video');
+        video.src=src;video.controls=true;video.preload='metadata';video.playsInline=true;
+        const label=document.createElement('div');label.className='item-label';
+        label.textContent='Video #'+i;
+        item.append(video,label);gallery.appendChild(item);loaded++;
+      }
+      checked++;
+      if(checked===20){
+        document.getElementById('videoCount').textContent=loaded+' Videos';
+        document.getElementById('videoEmpty').style.display=loaded===0?'block':'none';
+      }
+    });
+  }
+}
+
+function showSection(section,button){
+  document.getElementById('photos').style.display=section==='photos'?'block':'none';
+  document.getElementById('videos').style.display=section==='videos'?'block':'none';
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active'));
+  button.classList.add('active');
+}
+function openViewer(src){
+  document.getElementById('viewerImage').src=src;
+  document.getElementById('viewer').style.display='flex';
+}
+function closeViewer(){
+  document.getElementById('viewer').style.display='none';
+  document.getElementById('viewerImage').src='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeViewer();});
+loadPhotos();
+loadVideos();
+</script>
+</body>
+</html>
